@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:gefmartwiringadmin/side_menu.dart';
+import 'package:gefmartwiringadmin/feature/home/gold_members/gold_members.dart';
+import 'package:gefmartwiringadmin/feature/home/qr_exporting/screen/qr_viewData.dart';
+import 'package:gefmartwiringadmin/feature/home/qr_view/screen/qr_GenerateData.dart';
+import 'package:gefmartwiringadmin/feature/home/side_menu.dart';
+import 'package:gefmartwiringadmin/feature/home/silver_members/silver_members.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 
+import 'Users.dart';
 import 'dashboard.dart';
 
 late TabController tabController;
@@ -18,7 +23,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length:2, initialIndex: 0, vsync: this);
+    tabController = TabController(length:6, initialIndex: 0, vsync: this);
   }
 
   @override
@@ -36,7 +41,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     controller: tabController,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      Dashboard(),
+                      Dashboard(tabController: tabController,),
+                      UserPage(),
+                      SilverMembers(),
+                      GoldMembers(),
+                      QrGenerateDataTable(),
+                      QrViewDataTable(),
+
                       // QuestionPage(questionModel: widget.questionModel),
                       // ViewDataCategory(),
                       // DashBoard(), //0

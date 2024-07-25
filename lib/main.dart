@@ -1,11 +1,18 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:gefmartwiringadmin/login_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gefmartwiringadmin/feature/auth/screen/login_screen.dart';
+
+import 'firebase_options.dart';
 
 var w;
 var h;
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(ProviderScope(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -22,4 +29,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 

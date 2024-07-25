@@ -1,23 +1,94 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:gefmartwiringadmin/color/Appcolor.dart';
-import 'package:gefmartwiringadmin/home_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gefmartwiringadmin/feature/home/home_page.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'main.dart';
+import '../../../core/constants/Appcolor.dart';
+import '../../../main.dart';
+import '../controller/auth_controller.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
 
   bool masking=true;
+
+
+  Future<void> adminLogin(String email, String password, BuildContext context) async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection("admin")
+          .where('email', isEqualTo: email)
+          .where('password', isEqualTo: password)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+              (route) => false,
+        );
+      } else {
+        _showAlertDialog(context, "Invalid Email/Password");
+      }
+    } on FirebaseException catch (e) {
+      _showAlertDialog(context, e.message ?? "An error occurred");
+    } catch (e) {
+      _showAlertDialog(context, e.toString());
+    }
+  }
+
+  void _showAlertDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "ALERT !",
+            style: GoogleFonts.ubuntu(
+              fontWeight: FontWeight.w600,
+              fontSize: 26,
+              color: Color(0xff002859),
+            ),
+          ),
+          content: Text(
+            message,
+            style: GoogleFonts.ubuntu(
+              fontWeight: FontWeight.w400,
+              fontSize: 17,
+              color: Colors.black,
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                "OK",
+                style: GoogleFonts.ubuntu(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.blue,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
 
   @override
@@ -55,9 +126,9 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(20),
                             child: Image.asset(
-                              'assets/Gefmartlogo1.png',
+                              'assets/Geftenlogo.png',
                               fit: BoxFit.cover,  // adjust the image to cover the container
                             ),
                           ),
@@ -195,130 +266,73 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         Center(
                           child: Container(
-                            width: w * 0.3,
-                            height: h * 0.050,
+                            width: MediaQuery.of(context).size.width * 0.3,
+                            height: MediaQuery.of(context).size.height * 0.05,
                             decoration: BoxDecoration(
-                                color: Colors.green.shade500,
-                                borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                            ),
                             child: TextButton(
-                                onPressed: () async {
-                                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomePage(),),(route) => false,);
-                                  // if (_formkey.currentState!.validate()) {
-                                  //   ref.read(authControllerProvider.notifier).adminlogin(
-                                  //     email: email.text.trim(),
-                                  //     password: password.text.trim(),
-                                  //     context: context,
-                                  //     alertBox: (context) => showDialog(
-                                  //       context: context,
-                                  //       builder: (BuildContext context) {
-                                  //         return AlertDialog(
-                                  //           title: Text("ALERT !",style: GoogleFonts.ubuntu(
-                                  //             fontWeight: FontWeight.w600,
-                                  //             fontSize: 26,
-                                  //             color: Color(0xff002859),
-                                  //           ),),
-                                  //
-                                  //           content: Text(
-                                  //             "No User details Exist ",style: GoogleFonts.ubuntu(
-                                  //               fontWeight: FontWeight.w400,
-                                  //               fontSize: 17,
-                                  //               color: Colors.black
-                                  //           ),),
-                                  //           actions: [
-                                  //             TextButton(
-                                  //               child: Text("OK",style: GoogleFonts.ubuntu(
-                                  //                   fontWeight: FontWeight.w600,
-                                  //                   fontSize: 16,
-                                  //                   color: Colors.blue
-                                  //               ),),
-                                  //               onPressed: () {
-                                  //                 Navigator.of(context).pop();
-                                  //               },
-                                  //             ),
-                                  //           ],
-                                  //         );
-                                  //       },
-                                  //     ),
-                                  //   );
-                                  //   // await FirebaseFirestore.instance
-                                  //   //     .collection("brands")
-                                  //   //     .where('email', isEqualTo: email.text)
-                                  //   //     .where('password', isEqualTo: password.text)
-                                  //   //     .get()
-                                  //   //     .then((snapshot) async {
-                                  //   //   final brands = snapshot.docs;
-                                  //   //   bool accountFound = false;
-                                  //   //
-                                  //   //   for (var brand in brands) {
-                                  //   //     if (brand.get("email") == email.text &&
-                                  //   //         brand.get("password") == password.text) {
-                                  //   //       accountFound = true;
-                                  //   //       currentBrand = brand.id;
-                                  //   //       currentBrandName = brand.get('name');
-                                  //   //       break;
-                                  //   //     }
-                                  //   //   }
-                                  //   //
-                                  //   //   if (accountFound) {
-                                  //   //     final prefs = await SharedPreferences.getInstance();
-                                  //   //     prefs.setString('userId', email.text);
-                                  //   //     prefs.setString("password", password.text);
-                                  //   //
-                                  //   //     showUploadMessage(context, 'Login Successfull');
-                                  //   //
-                                  //   //
-                                  //   //     Navigator.pushAndRemoveUntil(
-                                  //   //       context,
-                                  //   //       MaterialPageRoute(
-                                  //   //         builder: (context) => Home(),
-                                  //   //       ),
-                                  //   //           (route) => false,
-                                  //   //     );
-                                  //   //   }
-                                  //   //   else {
-                                  //   //     showDialog(
-                                  //   //       context: context,
-                                  //   //       builder: (BuildContext context) {
-                                  //   //         return AlertDialog(
-                                  //   //           title: Text("ALERT !",style: GoogleFonts.ubuntu(
-                                  //   //             fontWeight: FontWeight.w600,
-                                  //   //             fontSize: 26,
-                                  //   //             color: Color(0xff002859),
-                                  //   //           ),),
-                                  //   //
-                                  //   //           content: Text(
-                                  //   //             "No User details Exist ",style: GoogleFonts.ubuntu(
-                                  //   //               fontWeight: FontWeight.w400,
-                                  //   //               fontSize: 17,
-                                  //   //               color: Colors.black
-                                  //   //           ),),
-                                  //   //           actions: [
-                                  //   //             TextButton(
-                                  //   //               child: Text("OK",style: GoogleFonts.ubuntu(
-                                  //   //                   fontWeight: FontWeight.w600,
-                                  //   //                   fontSize: 16,
-                                  //   //                   color: Colors.blue
-                                  //   //               ),),
-                                  //   //               onPressed: () {
-                                  //   //                 Navigator.of(context).pop();
-                                  //   //               },
-                                  //   //             ),
-                                  //   //           ],
-                                  //   //         );
-                                  //   //       },
-                                  //   //     );
-                                  //   //   }
-                                  //   // });
-                                  // }
-                                },
-                                child: Text(
-                                  "Login",
-                                  style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                                )),
+                              onPressed: () async {
+                                if (_formkey.currentState!.validate()) {
+                                  ref.read(authControllerProvider.notifier).adminLogin(
+                                    email: email.text.trim(),
+                                    password: password.text.trim(),
+                                    context: context,
+                                    alertBox: (context, message) => showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text(
+                                            "ALERT !",
+                                            style: GoogleFonts.ubuntu(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 26,
+                                              color: Color(0xff002859),
+                                            ),
+                                          ),
+                                          content: Text(
+                                            message,
+                                            style: GoogleFonts.ubuntu(
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 17,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              child: Text(
+                                                "OK",
+                                                style: GoogleFonts.ubuntu(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16,
+                                                  color: Colors.blue,
+                                                ),
+                                              ),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                "Login",
+                                style: TextStyle(fontSize: 16, color: Colors.white),
+                              ),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.green.shade500,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
+
                         SizedBox(
                           height: h * 0.04,
                         ),
