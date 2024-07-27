@@ -31,14 +31,16 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
         _allData.clear();
         _allData.addAll(
           querySnapshot.docs.map((doc) {
-            print(doc.reference.parent.parent?.id);
-            print(doc.id);
+            // print(doc.reference.parent.parent?.id);
+            // print(doc.id);
             var data = doc.data();
-            data['id'] = doc.id;  // Include document ID for updates
-            data['batchId'] = doc.reference.parent.parent?.id;  // Include batch ID for updates
+            data['id'] = doc.id; // Include document ID for updates
+            data['batchId'] =
+                doc.reference.parent.parent?.id; // Include batch ID for updates
             return GenerateQrCodeModel.fromMap(data);
           }).toList(),
         );
+        print(_allData);
         _filterData();
       });
     });
@@ -83,7 +85,8 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
       return;
     }
 
-    List<Map<String, dynamic>> selectedRows = _filteredData.where((item) => item['selected'] == true).toList();
+    List<Map<String, dynamic>> selectedRows =
+        _filteredData.where((item) => item['selected'] == true).toList();
 
     // Optimistically update UI
     setState(() {
@@ -95,15 +98,21 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
 
     // Update Firestore
     for (var item in selectedRows) {
-      print(item['batchId']);
-      print(item['id']);
+      // print(item['batchId']);
+      // print(item['id']);
       if (item['batchId'] != null && item['id'] != null) {
-        final qrDocRef = _firestore.collection('qr_batches').doc(item['batchId']).collection('qrLists').doc(item['id']);
+        final qrDocRef = _firestore
+            .collection('qr_batches')
+            .doc(item['batchId'])
+            .collection('qrLists')
+            .doc(item['id']);
         try {
           await qrDocRef.update({'ScanStatus': status});
-          print("Successfully updated document ${item['id']} in batch ${item['batchId']} with status $status");
+          print(
+              "Successfully updated document ${item['id']} in batch ${item['batchId']} with status $status");
         } catch (e) {
-          print("Failed to update document ${item['id']} in batch ${item['batchId']}: $e");
+          print(
+              "Failed to update document ${item['id']} in batch ${item['batchId']}: $e");
           _showSnackBarMessage('Failed to update some rows');
         }
       } else {
@@ -169,25 +178,29 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
                 DataColumn(
                   label: Text('Qr Number'),
                   onSort: (int columnIndex, bool ascending) {
-                    _sort<String>((Map<String, dynamic> d) => d['QrNumber'], columnIndex, ascending);
+                    _sort<String>((Map<String, dynamic> d) => d['QrNumber'],
+                        columnIndex, ascending);
                   },
                 ),
                 DataColumn(
                   label: Text('Scan Status'),
                   onSort: (int columnIndex, bool ascending) {
-                    _sort<String>((Map<String, dynamic> d) => d['ScanStatus'], columnIndex, ascending);
+                    _sort<String>((Map<String, dynamic> d) => d['ScanStatus'],
+                        columnIndex, ascending);
                   },
                 ),
                 DataColumn(
                   label: Text('Reward Points'),
                   onSort: (int columnIndex, bool ascending) {
-                    _sort<int>((Map<String, dynamic> d) => d['RewardPoint'], columnIndex, ascending);
+                    _sort<int>((Map<String, dynamic> d) => d['RewardPoint'],
+                        columnIndex, ascending);
                   },
                 ),
                 DataColumn(
                   label: Text('Loyalty Points'),
                   onSort: (int columnIndex, bool ascending) {
-                    _sort<int>((Map<String, dynamic> d) => d['Loyaltyint'], columnIndex, ascending);
+                    _sort<int>((Map<String, dynamic> d) => d['Loyaltyint'],
+                        columnIndex, ascending);
                   },
                 ),
                 DataColumn(label: Text('Created Date')),
@@ -195,7 +208,8 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
                 DataColumn(
                   label: Text('Export Status'),
                   onSort: (int columnIndex, bool ascending) {
-                    _sort<bool>((Map<String, dynamic> d) => d['ExportStatus'], columnIndex, ascending);
+                    _sort<bool>((Map<String, dynamic> d) => d['ExportStatus'],
+                        columnIndex, ascending);
                   },
                 ),
                 DataColumn(label: Text('Scanned Date')),
@@ -212,7 +226,8 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
               sortAscending: _sortAscending,
               dataRowHeight: 100.0, // Increase the row height
               onPageChanged: (pageIndex) {
-                _scrollController.jumpTo(0); // Scroll to the top when page changes
+                _scrollController
+                    .jumpTo(0); // Scroll to the top when page changes
               },
             ),
           ),
@@ -266,7 +281,8 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
     );
   }
 
-  void _sort<T>(Comparable<T> Function(Map<String, dynamic> d) getField, int columnIndex, bool ascending) {
+  void _sort<T>(Comparable<T> Function(Map<String, dynamic> d) getField,
+      int columnIndex, bool ascending) {
     _filteredData.sort((a, b) {
       if (!ascending) {
         final Map<String, dynamic> c = a;
@@ -295,20 +311,23 @@ class _DataTableSource extends DataTableSource {
     if (index >= data.length) {
       return DataRow.byIndex(
         index: index,
-        cells: List.generate(8, (_) => DataCell(Container())), // Create empty cells
+        cells: List.generate(
+            8, (_) => DataCell(Container())), // Create empty cells
       );
     }
     final item = data[index];
     return DataRow.byIndex(
       index: index,
-      selected: item['selected'] ?? false, // Ensure default value for 'selected'
+      selected:
+          item['selected'] ?? false, // Ensure default value for 'selected'
       onSelectChanged: (value) {
         item['selected'] = value ?? false;
         notifyListeners();
       },
       cells: [
         DataCell(Checkbox(
-          value: item['selected'] ?? false, // Ensure default value for 'selected'
+          value:
+              item['selected'] ?? false, // Ensure default value for 'selected'
           onChanged: (value) {
             item['selected'] = value ?? false;
             notifyListeners();
@@ -320,7 +339,8 @@ class _DataTableSource extends DataTableSource {
         DataCell(Text(item['Loyaltyint']?.toString() ?? '')),
         DataCell(Text(item['CreatedDate']?.toString() ?? '')),
         DataCell(Text(item['ExportedDate']?.toString() ?? '')),
-        DataCell(Text(item['ExportStatus'] == true ? 'Exported' : 'Not Exported')),
+        DataCell(
+            Text(item['ExportStatus'] == true ? 'Exported' : 'Not Exported')),
         DataCell(Text(item['ScannedDate']?.toString() ?? '')),
       ],
     );
@@ -333,5 +353,6 @@ class _DataTableSource extends DataTableSource {
   int get rowCount => data.length;
 
   @override
-  int get selectedRowCount => data.where((item) => item['selected'] == true).length;
+  int get selectedRowCount =>
+      data.where((item) => item['selected'] == true).length;
 }
