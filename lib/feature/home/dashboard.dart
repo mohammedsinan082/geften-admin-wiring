@@ -45,32 +45,7 @@ class _DashboardState extends State<Dashboard> {
                                 fontSize: 45,
                                 color: AppColors.black)
                         ),
-                        SizedBox(width: w*0.1,),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: Size(w * 0.15, h * 0.060), // Button size
-                            padding: EdgeInsets.zero, // Remove default padding
-                          ),
-                          onPressed: () {
-                            pickCsvFile(context);
-                            // Your action here
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center, // Center the content
-                            children: [
-                              Text(
-                                'Upload Qr File',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 25,
-                                  color: AppColors.black,
-                                ),
-                              ),
-                              SizedBox(width: w * 0.005),
-                              Icon(Icons.file_copy_outlined),
-                            ],
-                          ),
-                        )
+
 
 
 
@@ -249,29 +224,6 @@ class _DashboardState extends State<Dashboard> {
     );
   }
 
-  Future<void> pickCsvFile(BuildContext context) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-    );
-
-    String message;
-
-    if (result != null && result.files.single.path != null) {
-      File file = File(result.files.single.path!);
-      message = 'Picked file111111111111111111111111111111111111111: ${file.path}';
-    } else if (result == null) {
-      message = 'No file picked.';
-    } else {
-      message = 'Invalid file type picked.';
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
-  }
 
 }
 

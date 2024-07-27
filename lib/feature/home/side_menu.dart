@@ -264,12 +264,12 @@ class _SideMenuState extends State<SideMenu> {
                           const SizedBox(
                             width: 10,
                           ),
-                          Image.asset("assets/imageqr.png"),
+                          Icon(Icons.auto_delete_outlined,size: 20,color: AppColors.red,),
                           const SizedBox(
                             width: 7,
                           ),
                           Text(
-                            'Qr Code Generate',
+                            'Deleted Users',
                             style: GoogleFonts.poppins(
                               color: selectedTab == 4 ? Colors.white : Colors.grey,
                             ),
@@ -307,9 +307,47 @@ class _SideMenuState extends State<SideMenu> {
                             width: 7,
                           ),
                           Text(
-                            'Qr View',
+                            'Qr Code Generate',
                             style: GoogleFonts.poppins(
                               color: selectedTab == 5 ? Colors.white : Colors.grey,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: h * 0.01),
+                  Container(
+                    height: 30,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: selectedTab == 6 ? Colors.green : Colors.transparent,
+                      border: selectedTab == 6
+                          ? const Border(
+                        left: BorderSide(color: Colors.white, width: 3),
+                      )
+                          : null,
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          widget.tabController.animateTo(6);
+                          selectedTab = 6;
+                        });
+                      },
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Image.asset("assets/imageqr.png"),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Qr View',
+                            style: GoogleFonts.poppins(
+                              color: selectedTab == 6 ? Colors.white : Colors.grey,
                             ),
                           )
                         ],
