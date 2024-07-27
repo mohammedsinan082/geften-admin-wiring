@@ -4,6 +4,10 @@ import '../../../../model/qr_batchmodel.dart';
 import '../../../../model/qr_model.dart';
 
 class QrViewDataTable extends StatefulWidget {
+  final String batchId;
+
+  QrViewDataTable({required this.batchId});
+
   @override
   _QrViewDataTableState createState() => _QrViewDataTableState();
 }
@@ -26,21 +30,22 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
   }
 
   void _streamQrCodes() {
-    _firestore.collectionGroup('qrLists').snapshots().listen((querySnapshot) {
+    _firestore
+        .collection('qr_batches')
+        .doc(widget.batchId)
+        .collection('qrLists')
+        .snapshots()
+        .listen((querySnapshot) {
       setState(() {
         _allData.clear();
         _allData.addAll(
           querySnapshot.docs.map((doc) {
-            // print(doc.reference.parent.parent?.id);
-            // print(doc.id);
             var data = doc.data();
             data['id'] = doc.id; // Include document ID for updates
-            data['batchId'] =
-                doc.reference.parent.parent?.id; // Include batch ID for updates
+            data['batchId'] = widget.batchId; // Include batch ID for updates
             return GenerateQrCodeModel.fromMap(data);
           }).toList(),
         );
-        print(_allData);
         _filterData();
       });
     });
@@ -98,8 +103,6 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
 
     // Update Firestore
     for (var item in selectedRows) {
-      // print(item['batchId']);
-      // print(item['id']);
       if (item['batchId'] != null && item['id'] != null) {
         final qrDocRef = _firestore
             .collection('qr_batches')
@@ -108,15 +111,9 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
             .doc(item['id']);
         try {
           await qrDocRef.update({'ScanStatus': status});
-          print(
-              "Successfully updated document ${item['id']} in batch ${item['batchId']} with status $status");
         } catch (e) {
-          print(
-              "Failed to update document ${item['id']} in batch ${item['batchId']}: $e");
           _showSnackBarMessage('Failed to update some rows');
         }
-      } else {
-        print("Missing batchId or id for item: $item");
       }
     }
 
@@ -131,108 +128,113 @@ class _QrViewDataTableState extends State<QrViewDataTable> {
   Widget build(BuildContext context) {
     int selectedCount = _getSelectedRowCount();
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            ElevatedButton(
-              onPressed: () async {
-                String? selectedStatus = await _showStatusDialog(context);
-                if (selectedStatus != null) {
-                  _updateSelectedRowsStatus(selectedStatus);
-                }
-              },
-              child: Text('Change Status'),
-            ),
-            DropdownButton<String>(
-              value: _selectedStatus,
-              items: ["All", "Hold", "Ready to Scan", "Scanned"]
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedStatus = newValue!;
-                  _filterData();
-                });
-              },
-            ),
-          ],
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            child: PaginatedDataTable(
-              header: Text('QR Codes Data'),
-              columns: [
-                DataColumn(
-                  label: Checkbox(
-                    value: _selectAll,
-                    onChanged: _selectAllRows,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('QR Codes in Batch: ${widget.batchId}'),
+      ),
+      body: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  String? selectedStatus = await _showStatusDialog(context);
+                  if (selectedStatus != null) {
+                    _updateSelectedRowsStatus(selectedStatus);
+                  }
+                },
+                child: Text('Change Status'),
+              ),
+              DropdownButton<String>(
+                value: _selectedStatus,
+                items: ["All", "Hold", "Ready to Scan", "Scanned"]
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedStatus = newValue!;
+                    _filterData();
+                  });
+                },
+              ),
+            ],
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: PaginatedDataTable(
+                header: Text('QR Codes Data'),
+                columns: [
+                  DataColumn(
+                    label: Checkbox(
+                      value: _selectAll,
+                      onChanged: _selectAllRows,
+                    ),
                   ),
-                ),
-                DataColumn(
-                  label: Text('Qr Number'),
-                  onSort: (int columnIndex, bool ascending) {
-                    _sort<String>((Map<String, dynamic> d) => d['QrNumber'],
-                        columnIndex, ascending);
-                  },
-                ),
-                DataColumn(
-                  label: Text('Scan Status'),
-                  onSort: (int columnIndex, bool ascending) {
-                    _sort<String>((Map<String, dynamic> d) => d['ScanStatus'],
-                        columnIndex, ascending);
-                  },
-                ),
-                DataColumn(
-                  label: Text('Reward Points'),
-                  onSort: (int columnIndex, bool ascending) {
-                    _sort<int>((Map<String, dynamic> d) => d['RewardPoint'],
-                        columnIndex, ascending);
-                  },
-                ),
-                DataColumn(
-                  label: Text('Loyalty Points'),
-                  onSort: (int columnIndex, bool ascending) {
-                    _sort<int>((Map<String, dynamic> d) => d['Loyaltyint'],
-                        columnIndex, ascending);
-                  },
-                ),
-                DataColumn(label: Text('Created Date')),
-                DataColumn(label: Text('Exported Date')),
-                DataColumn(
-                  label: Text('Export Status'),
-                  onSort: (int columnIndex, bool ascending) {
-                    _sort<bool>((Map<String, dynamic> d) => d['ExportStatus'],
-                        columnIndex, ascending);
-                  },
-                ),
-                DataColumn(label: Text('Scanned Date')),
-              ],
-              source: _DataTableSource(_filteredData),
-              onRowsPerPageChanged: (int? value) {
-                setState(() {
-                  _rowsPerPage = value ?? _rowsPerPage;
-                });
-              },
-              availableRowsPerPage: [5, 10, 15, 20],
-              rowsPerPage: _rowsPerPage,
-              sortColumnIndex: _sortColumnIndex,
-              sortAscending: _sortAscending,
-              dataRowHeight: 100.0, // Increase the row height
-              onPageChanged: (pageIndex) {
-                _scrollController
-                    .jumpTo(0); // Scroll to the top when page changes
-              },
+                  DataColumn(
+                    label: Text('Qr Number'),
+                    onSort: (int columnIndex, bool ascending) {
+                      _sort<String>((Map<String, dynamic> d) => d['QrNumber'],
+                          columnIndex, ascending);
+                    },
+                  ),
+                  DataColumn(
+                    label: Text('Scan Status'),
+                    onSort: (int columnIndex, bool ascending) {
+                      _sort<String>((Map<String, dynamic> d) => d['ScanStatus'],
+                          columnIndex, ascending);
+                    },
+                  ),
+                  DataColumn(
+                    label: Text('Reward Points'),
+                    onSort: (int columnIndex, bool ascending) {
+                      _sort<int>((Map<String, dynamic> d) => d['RewardPoint'],
+                          columnIndex, ascending);
+                    },
+                  ),
+                  DataColumn(
+                    label: Text('Loyalty Points'),
+                    onSort: (int columnIndex, bool ascending) {
+                      _sort<int>((Map<String, dynamic> d) => d['Loyaltyint'],
+                          columnIndex, ascending);
+                    },
+                  ),
+                  DataColumn(label: Text('Created Date')),
+                  DataColumn(label: Text('Exported Date')),
+                  DataColumn(
+                    label: Text('Export Status'),
+                    onSort: (int columnIndex, bool ascending) {
+                      _sort<bool>((Map<String, dynamic> d) => d['ExportStatus'],
+                          columnIndex, ascending);
+                    },
+                  ),
+                  DataColumn(label: Text('Scanned Date')),
+                ],
+                source: _DataTableSource(_filteredData),
+                onRowsPerPageChanged: (int? value) {
+                  setState(() {
+                    _rowsPerPage = value ?? _rowsPerPage;
+                  });
+                },
+                availableRowsPerPage: [5, 10, 15, 20],
+                rowsPerPage: _rowsPerPage,
+                sortColumnIndex: _sortColumnIndex,
+                sortAscending: _sortAscending,
+                dataRowHeight: 100.0, // Increase the row height
+                onPageChanged: (pageIndex) {
+                  _scrollController
+                      .jumpTo(0); // Scroll to the top when page changes
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

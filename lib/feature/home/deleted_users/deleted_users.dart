@@ -10,14 +10,14 @@ import '../../../core/widgets/text_field_with_label.dart';
 import '../../../main.dart';
 import '../../../model/User_model.dart';
 
-class SilverMembers extends StatefulWidget {
-  const SilverMembers({super.key});
+class DeletedUsersPage extends StatefulWidget {
+  const DeletedUsersPage({super.key});
 
   @override
-  State<SilverMembers> createState() => _UserPageState();
+  State<DeletedUsersPage> createState() => _UserPageState();
 }
 
-class _UserPageState extends State<SilverMembers> {
+class _UserPageState extends State<DeletedUsersPage> {
   GlobalKey<FormState> formkey = GlobalKey();
   String? district;
   final List<String> districts = [
@@ -146,7 +146,7 @@ class _UserPageState extends State<SilverMembers> {
         .snapshots()
         .map((snapshot) => snapshot.docs
         .map((doc) => UserModel.fromMap(doc.data()))
-        .where((user) => !user.isdeleted && !user.isGoldMember)
+        .where((user) => user.isdeleted)
         .toList());
   }
 
@@ -154,7 +154,7 @@ class _UserPageState extends State<SilverMembers> {
     nameController.text = user.name;
     phonecontroller.text = user.mobileNumber;
     aadharController.text = user.aadharNumber ?? '';
-    insuranceController.text = user.insuranceNumber ?? '';
+    insuranceController.text =user.insuranceNumber ?? '';
     placeController.text = user.place;
     addressController.text = user.address;
     pinCodeController.text = user.pinCode;
@@ -212,6 +212,19 @@ class _UserPageState extends State<SilverMembers> {
                       filled: true,
                       fillColor: Colors.grey[200],
                       labelText: "Enter your Aadhar (Optional)",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  TextFormField(
+                    controller: insuranceController,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      labelText: "Enter your Insurance (Optional)",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.0),
                         borderSide: BorderSide.none,
@@ -550,7 +563,7 @@ class _UserPageState extends State<SilverMembers> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Silver Members',
+                          Text('Deleted Users',
                               style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 25,
@@ -853,7 +866,7 @@ class _DataTableSource extends DataTableSource {
               builder: (BuildContext context) {
                 return AlertDialog(
                   title: Text('Are you sure?'),
-                  content: Text('Are you sure you want to remove this user?'),
+                  content: Text('Are you sure you want to restore this user?'),
                   actions: [
                     TextButton(
                       onPressed: () {
@@ -866,7 +879,7 @@ class _DataTableSource extends DataTableSource {
                         FirebaseFirestore.instance
                             .collection('users')
                             .doc(user.mobileNumber)
-                            .update({'isdeleted': true,'isApproved' : false});
+                            .update({'isdeleted': false,'isApproved' : true});
                         Navigator.of(context).pop();
                       },
                       child: Text('OK'),
@@ -877,7 +890,7 @@ class _DataTableSource extends DataTableSource {
             );
           },
           child: Icon(
-            Icons.delete,
+            Icons.auto_delete_outlined,
             color: Colors.red,
           ),
         ),

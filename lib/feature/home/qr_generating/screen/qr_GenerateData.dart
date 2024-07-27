@@ -16,7 +16,7 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
   final List<Map<String, dynamic>> _allData = [];
   final List<Map<String, dynamic>> _filteredData = [];
   final Set<String> _generatedCodes = {};
-  final Set<String> _existingCodes = {}; // Set to store existing codes in Firebase
+  final Set<String> _existingCodes = {};
   int _rowsPerPage = 5;
   int? _sortColumnIndex;
   bool _sortAscending = true;
@@ -25,7 +25,7 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
   bool _selectAll = false;
   String _selectedStatus = "All";
   bool _isDownloading = false;
-  int _currentBatchNumber = 1; // Initialize the batch number
+  int _currentBatchNumber = 1;
 
   @override
   void initState() {
@@ -50,32 +50,42 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
 
   void _generateUniqueCodes(int count) {
     List<GenerateQrCodeModel> generatedCodes = [];
+    List<String> eliminatedDuplicates = [];
+
     for (int i = 0; i < count; i++) {
       String uniqueCode;
       do {
         uniqueCode = _generateUniqueCode();
       } while (_generatedCodes.contains(uniqueCode) || _existingCodes.contains(uniqueCode));
 
-      _generatedCodes.add(uniqueCode);
-      generatedCodes.add(
-        GenerateQrCodeModel(
-          id: _firestore.collection('qr_batches').doc().id,
-          QrNumber: uniqueCode,
-          ScanStatus: "Hold",
-          RewardPoint: 0,
-          Loyaltyint: 0,
-          CreatedDate: DateTime.now(),
-          ExportedDate: DateTime.now(),
-          ExportStatus: false,
-          ScannedDate: null,
-        ),
-      );
+      if (_generatedCodes.contains(uniqueCode) || _existingCodes.contains(uniqueCode)) {
+        eliminatedDuplicates.add(uniqueCode);
+      } else {
+        _generatedCodes.add(uniqueCode);
+        generatedCodes.add(
+          GenerateQrCodeModel(
+            id: uniqueCode,
+            QrNumber: uniqueCode,
+            ScanStatus: "Hold",
+            RewardPoint: 0,
+            Loyaltyint: 0,
+            CreatedDate: DateTime.now(),
+            ExportedDate: DateTime.now(),
+            ExportStatus: false,
+            ScannedDate: null,
+          ),
+        );
+      }
     }
 
     setState(() {
       _allData.addAll(generatedCodes.map((e) => e.toMap()));
-      _filterData(); // Update filtered data
+      _filterData();
     });
+
+    if (eliminatedDuplicates.isNotEmpty) {
+      _showDuplicatePopup(eliminatedDuplicates);
+    }
   }
 
   String _generateUniqueCode() {
@@ -111,6 +121,32 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
                   _generateUniqueCodes(count!);
                   Navigator.of(context).pop();
                 }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showDuplicatePopup(List<String> eliminatedDuplicates) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Duplicate Codes Eliminated'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: eliminatedDuplicates
+                  .map((code) => Text('You have prevented duplicate code "$code"'))
+                  .toList(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -161,11 +197,10 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
     }
 
     setState(() {
-      _isDownloading = true; // Start the progress indicator
+      _isDownloading = true;
     });
 
     try {
-      // Filter data to include only items with ScanStatus "Hold"
       List<Map<String, dynamic>> dataToSave = _allData.where((item) => item['ScanStatus'] == "Hold").toList();
 
       if (dataToSave.isEmpty) {
@@ -178,7 +213,6 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
         return;
       }
 
-      // Remove duplicates before saving to Firebase and creating CSV
       List<Map<String, dynamic>> uniqueData = await _removeDuplicates(dataToSave);
 
       if (uniqueData.isEmpty) {
@@ -191,11 +225,11 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
         return;
       }
 
-      await _saveToFirebase(uniqueData); // Save to Firebase before downloading
+      await _saveToFirebase(uniqueData);
 
       List<List<String>> csvData = [
         <String>['Qr Number'],
-        ...uniqueData.map((item) => [item['QrNumber']]), // Use filtered data to include only QR numbers with status "Hold"
+        ...uniqueData.map((item) => [item['QrNumber']]),
       ];
 
       String csv = const ListToCsvConverter().convert(csvData);
@@ -211,7 +245,6 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
         SnackBar(content: Text('CSV file downloaded')),
       );
 
-      // Clear the data after downloading
       setState(() {
         _allData.clear();
         _filteredData.clear();
@@ -223,13 +256,14 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
     }
 
     setState(() {
-      _isDownloading = false; // Stop the progress indicator
+      _isDownloading = false;
     });
   }
 
   Future<List<Map<String, dynamic>>> _removeDuplicates(List<Map<String, dynamic>> dataToSave) async {
     Set<String> newCodes = dataToSave.map((item) => item['QrNumber'] as String).toSet();
     List<Map<String, dynamic>> uniqueData = [];
+    List<String> eliminatedDuplicates = [];
 
     for (var item in dataToSave) {
       if (newCodes.contains(item['QrNumber'])) {
@@ -237,40 +271,47 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
       }
     }
 
-    // Check Firebase for existing codes
     final querySnapshot = await _firestore.collectionGroup('qrLists').get();
     for (var doc in querySnapshot.docs) {
-      newCodes.remove(doc.data()['QrNumber']);
+      if (newCodes.contains(doc.data()['QrNumber'])) {
+        eliminatedDuplicates.add(doc.data()['QrNumber']);
+        newCodes.remove(doc.data()['QrNumber']);
+      }
     }
 
     uniqueData = uniqueData.where((item) => newCodes.contains(item['QrNumber'])).toList();
+
+    if (eliminatedDuplicates.isNotEmpty) {
+      _showDuplicatePopup(eliminatedDuplicates);
+    }
+
     return uniqueData;
   }
 
   Future<void> _saveToFirebase(List<Map<String, dynamic>> dataToSave) async {
-    List<GenerateQrCodeModel> uniqueModels = dataToSave.map((data) => GenerateQrCodeModel.fromMap(data)).toList();
+    List<GenerateQrCodeModel> uniqueModels = dataToSave.map((data) {
+      data['ExportStatus'] = true;
+      return GenerateQrCodeModel.fromMap(data);
+    }).toList();
 
-    // Create a new batch document
     String batchId = 'Batch$_currentBatchNumber';
     final batchData = QrBatchmodel(
       batchId: batchId,
       createdDate: DateTime.now(),
       status: false,
-      batchStatus: "Hold", // Assuming the status is "Hold" initially
+      batchStatus: "Hold",
     ).toMap();
 
     await _firestore.collection('qr_batches').doc(batchId).set(batchData);
 
-    // Save each QR code in a sub-collection
     for (var qrModel in uniqueModels) {
       await _firestore.collection('qr_batches').doc(batchId).collection('qrLists').doc(qrModel.id).set(qrModel.toMap()).then((value) {
         _firestore.collection('qr_batches').doc(batchId).collection('qrLists').doc(qrModel.id).update({
-          "batchId":batchId
+          "batchId": batchId
         });
-      },);
+      });
     }
 
-    // Increment the batch number for the next batch
     setState(() {
       _currentBatchNumber++;
     });
@@ -344,14 +385,10 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
                       },
                     ),
                     DataColumn(label: Text('Exported Date')),
-                    DataColumn(
-                      label: Text('Blank          '),
-                    ),
-                    DataColumn(
-                      label: Text('Blank          '),
-                    ),
-                    DataColumn(label: Text('Blank          ')),
-                    DataColumn(label: Text('Blank          ')),
+                    DataColumn(label: Text('Blank')),
+                    DataColumn(label: Text('Blank')),
+                    DataColumn(label: Text('Blank')),
+                    DataColumn(label: Text('Blank')),
                   ],
                   source: _DataTableSource(_filteredData),
                   onRowsPerPageChanged: (int? value) {
@@ -363,9 +400,9 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
                   rowsPerPage: _rowsPerPage,
                   sortColumnIndex: _sortColumnIndex,
                   sortAscending: _sortAscending,
-                  dataRowHeight: 100.0, // Increase the row height
+                  dataRowHeight: 100.0,
                   onPageChanged: (pageIndex) {
-                    _scrollController.jumpTo(0); // Scroll to the top when page changes
+                    _scrollController.jumpTo(0);
                   },
                 ),
               ),
@@ -409,20 +446,20 @@ class _DataTableSource extends DataTableSource {
     if (index >= data.length) {
       return DataRow.byIndex(
         index: index,
-        cells: List.generate(8, (_) => DataCell(Container())), // Create empty cells
+        cells: List.generate(8, (_) => DataCell(Container())),
       );
     }
     final item = data[index];
     return DataRow.byIndex(
       index: index,
-      selected: item['selected'] ?? false, // Ensure default value for 'selected'
+      selected: item['selected'] ?? false,
       onSelectChanged: (value) {
         item['selected'] = value ?? false;
         notifyListeners();
       },
       cells: [
         DataCell(Checkbox(
-          value: item['selected'] ?? false, // Ensure default value for 'selected'
+          value: item['selected'] ?? false,
           onChanged: (value) {
             item['selected'] = value ?? false;
             notifyListeners();
@@ -432,10 +469,10 @@ class _DataTableSource extends DataTableSource {
         DataCell(Text(item['ScanStatus'] ?? '')),
         DataCell(Text(item['ExportStatus'] == true ? 'Exported' : 'Not Exported')),
         DataCell(Text(item['ExportedDate']?.toString() ?? '')),
-        DataCell(Text('')), // Adjusted for 'Blank' columns
-        DataCell(Text('')), // Adjusted for 'Blank' columns
-        DataCell(Text('')), // Adjusted for 'Blank' columns
-        DataCell(Text('')), // Adjusted for 'Blank' columns
+        DataCell(Text('')),
+        DataCell(Text('')),
+        DataCell(Text('')),
+        DataCell(Text('')),
       ],
     );
   }
