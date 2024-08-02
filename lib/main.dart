@@ -12,7 +12,7 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(ProviderScope(child: const MyApp()));
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -21,13 +21,11 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    w=MediaQuery.of(context).size.width;
-    h=MediaQuery.of(context).size.height;
+    w = MediaQuery.of(context).size.width;
+    h = MediaQuery.of(context).size.height;
     return const MaterialApp(
       home: LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
-
-
