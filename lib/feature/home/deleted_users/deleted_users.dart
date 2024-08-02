@@ -10,6 +10,7 @@ import '../../../core/widgets/text_field_with_label.dart';
 import '../../../main.dart';
 import '../../../model/User_model.dart';
 
+
 class DeletedUsersPage extends StatefulWidget {
   const DeletedUsersPage({super.key});
 
@@ -62,8 +63,13 @@ class _UserPageState extends State<DeletedUsersPage> {
   Future<void> pickAndUploadPDF(BuildContext context, UserModel user) async {
     try {
       // Check if the user already has a PDF uploaded
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.mobileNumber).get();
-      if (userDoc.exists && userDoc['pdfUrl'] != null && userDoc['pdfUrl'].isNotEmpty) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.mobileNumber)
+          .get();
+      if (userDoc.exists &&
+          userDoc['pdfUrl'] != null &&
+          userDoc['pdfUrl'].isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('User already has a PDF uploaded.')),
         );
@@ -87,7 +93,9 @@ class _UserPageState extends State<DeletedUsersPage> {
             html.File file = files[0];
 
             // Upload the file to Firebase Storage
-            Reference storageReference = FirebaseStorage.instance.ref().child('pdfs/${user.mobileNumber}/$fileName');
+            Reference storageReference = FirebaseStorage.instance
+                .ref()
+                .child('pdfs/${user.mobileNumber}/$fileName');
             UploadTask uploadTask = storageReference.putBlob(file);
 
             // Wait for the upload to complete
@@ -97,7 +105,10 @@ class _UserPageState extends State<DeletedUsersPage> {
             String downloadURL = await storageReference.getDownloadURL();
 
             // Save the URL to the user's pdfUrl field in Firestore
-            await FirebaseFirestore.instance.collection('users').doc(user.mobileNumber).update({
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.mobileNumber)
+                .update({
               'pdfUrl': downloadURL,
             });
 
@@ -154,19 +165,25 @@ class _UserPageState extends State<DeletedUsersPage> {
     nameController.text = user.name;
     phonecontroller.text = user.mobileNumber;
     aadharController.text = user.aadharNumber ?? '';
-    insuranceController.text =user.insuranceNumber ?? '';
+    insuranceController.text = user.insuranceNumber ?? '';
     placeController.text = user.place;
     addressController.text = user.address;
     pinCodeController.text = user.pinCode;
     district = user.district;
     stateController.text = user.state;
 
+    bool isChannelPartnerRecommended = user.isChannelPartnrReccommended ?? false;
+    bool isSupportGeften = user.isSupportGeften ?? false;
+    bool isLoyaltyPointAchieved = user.isLoyaltyPointAchieved ?? false;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         double w = MediaQuery.of(context).size.width;
+        double h = MediaQuery.of(context).size.height;
         return AlertDialog(
-          title: Text('Edit User', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+          title: Text('Edit User',
+              style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Form(
               key: formkey,
@@ -322,7 +339,8 @@ class _UserPageState extends State<DeletedUsersPage> {
                       ),
                       hint: AppText("-District-"),
                       value: districts.isNotEmpty ? district : null,
-                      items: districts.map<DropdownMenuItem<String>>((String value) {
+                      items: districts
+                          .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem(
                           value: value,
                           child: AppText(value),
@@ -349,6 +367,47 @@ class _UserPageState extends State<DeletedUsersPage> {
                       ),
                     ),
                   ),
+                  SizedBox(height: 15),
+                  if (isLoyaltyPointAchieved)
+                    Container(
+                      height: h * 0.1,
+                      width: w,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Text("Is Channel Partner Recommended "),
+                              SizedBox(width: w * 0.01),
+                              IsChannelPartnrReccommended(
+                                initialToggle: isChannelPartnerRecommended,
+                                onToggle: (newToggle) {
+                                  FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(user.mobileNumber)
+                                      .update({'isChannelPartnrReccommended': newToggle});
+                                },
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: h * 0.02),
+                          Row(
+                            children: [
+                              Text("Is Geften Supporter"),
+                              SizedBox(width: w * 0.07),
+                              IsSupportGeften(
+                                initialToggle: isSupportGeften,
+                                onToggle: (newToggle) {
+                                  FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(user.mobileNumber)
+                                      .update({'isSupportGeften': newToggle});
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   SizedBox(height: h * 0.07),
                   SizedBox(
                     height: h * 0.1,
@@ -372,6 +431,10 @@ class _UserPageState extends State<DeletedUsersPage> {
                             pinCode: pinCodeController.text,
                             district: district,
                             state: stateController.text,
+                            isSupportGeften: isSupportGeften,
+                            isChannelPartnrReccommended:
+                            isChannelPartnerRecommended,
+                            isLoyaltyPointAchieved: isLoyaltyPointAchieved,
                           );
 
                           FirebaseFirestore.instance
@@ -404,8 +467,11 @@ class _UserPageState extends State<DeletedUsersPage> {
   }
 
   void addPoint(BuildContext context, UserModel user) {
-    TextEditingController pointsController = TextEditingController();
-    TextEditingController rewardPointsController = TextEditingController();
+    // Initialize the controllers with the current points
+    TextEditingController pointsController =
+    TextEditingController(text: user.loyaltyPoints?.toString() ?? '0');
+    TextEditingController rewardPointsController =
+    TextEditingController(text: user.rewardPOints?.toString() ?? '0');
 
     showDialog(
       context: context,
@@ -427,6 +493,7 @@ class _UserPageState extends State<DeletedUsersPage> {
                     ),
                     TextFormField(
                       controller: pointsController,
+                      keyboardType: TextInputType.number, // Allow only numbers
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.grey[200],
@@ -445,6 +512,7 @@ class _UserPageState extends State<DeletedUsersPage> {
                     ),
                     TextFormField(
                       controller: rewardPointsController,
+                      keyboardType: TextInputType.number, // Allow only numbers
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.grey[200],
@@ -455,18 +523,20 @@ class _UserPageState extends State<DeletedUsersPage> {
                       ),
                     ),
                     SizedBox(
-                      height: h * 0.1,
+                      height: MediaQuery.of(context).size.height * 0.1,
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Text(
                           "Loyalty Points: ${user.loyaltyPoints ?? 0}",
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 25),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 25),
                         ),
                         Text(
                           "Reward Points: ${user.rewardPOints ?? 0}",
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 25),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 25),
                         ),
                       ],
                     ),
@@ -485,10 +555,15 @@ class _UserPageState extends State<DeletedUsersPage> {
                       ),
                     ),
                     onPressed: () async {
-                      if (pointsController.text.isNotEmpty || rewardPointsController.text.isNotEmpty) {
-                        int newLoyaltyPoints = int.tryParse(pointsController.text) ?? 0;
-                        int newRewardPoints = int.tryParse(rewardPointsController.text) ?? 0;
+                      if (pointsController.text.isNotEmpty ||
+                          rewardPointsController.text.isNotEmpty) {
+                        // Parse new values from the TextFormFields
+                        int newLoyaltyPoints =
+                            int.tryParse(pointsController.text) ?? 0;
+                        int newRewardPoints =
+                            int.tryParse(rewardPointsController.text) ?? 0;
 
+                        // Update the points in Firestore with the new values
                         await FirebaseFirestore.instance
                             .collection('users')
                             .doc(user.mobileNumber)
@@ -563,12 +638,13 @@ class _UserPageState extends State<DeletedUsersPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Deleted Users',
+                          Text('All Users',
                               style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 25,
                                   color: AppColors.black)),
-                          SizedBox(width: MediaQuery.of(context).size.width * 0.1),
+                          SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.1),
                           Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(0, 20, 0, 20),
                             child: Container(
@@ -592,7 +668,9 @@ class _UserPageState extends State<DeletedUsersPage> {
                                   children: [
                                     Expanded(
                                       child: Padding(
-                                        padding: EdgeInsetsDirectional.fromSTEB(4, 0, 4, 0),
+                                        padding:
+                                        EdgeInsetsDirectional.fromSTEB(
+                                            4, 0, 4, 0),
                                         child: TextFormField(
                                           controller: searchController,
                                           obscureText: false,
@@ -604,14 +682,16 @@ class _UserPageState extends State<DeletedUsersPage> {
                                                 color: Color(0x00000000),
                                                 width: 2,
                                               ),
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                              BorderRadius.circular(8),
                                             ),
                                             focusedBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
                                                 color: Color(0x00000000),
                                                 width: 2,
                                               ),
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                              BorderRadius.circular(8),
                                             ),
                                             filled: true,
                                             fillColor: Colors.white,
@@ -695,14 +775,19 @@ class _UserPageState extends State<DeletedUsersPage> {
                                   : Container(
                                 width: MediaQuery.of(context).size.width,
                                 child: PaginatedDataTable(
-                                  rowsPerPage: _filteredUsers.length <= 10 ? _filteredUsers.length : 10,
+                                  rowsPerPage: _filteredUsers.length <= 10
+                                      ? _filteredUsers.length
+                                      : 10,
                                   arrowHeadColor: Colors.red,
                                   columns: [
                                     DataColumn(label: Text("Name")),
                                     DataColumn(label: Text("Approved")),
+                                    DataColumn(
+                                        label: Text("Achieved")),
                                     DataColumn(label: Text("Phone")),
                                     DataColumn(label: Text("Place")),
-                                    DataColumn(label: Text("Insurance")),
+                                    DataColumn(
+                                        label: Text("Insurance")),
                                     DataColumn(label: Text("Status")),
                                     DataColumn(label: Text("Add Point")),
                                     DataColumn(label: Text("Action")),
@@ -767,6 +852,18 @@ class _DataTableSource extends DataTableSource {
                 .collection('users')
                 .doc(user.mobileNumber)
                 .update({'isApproved': newToggle});
+          },
+        ),
+      ),
+      DataCell(
+        IsLoyaltyPointAchieved(
+          initialToggle: user.isLoyaltyPointAchieved ?? false,
+          loyaltyPoints: user.loyaltyPoints ?? 0, // Pass loyaltyPoints
+          onToggle: (newToggle) {
+            FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.mobileNumber)
+                .update({'isLoyaltyPointAchieved': newToggle});
           },
         ),
       ),
@@ -969,6 +1066,205 @@ class _ApproveToggleButtonState extends State<ApproveToggleButton> {
   }
 }
 
+class IsLoyaltyPointAchieved extends StatefulWidget {
+  final bool initialToggle;
+  final int loyaltyPoints; // Add loyaltyPoints parameter
+  final Function(bool) onToggle;
+
+  IsLoyaltyPointAchieved({
+    required this.initialToggle,
+    required this.loyaltyPoints, // Initialize loyaltyPoints
+    required this.onToggle,
+  });
+
+  @override
+  _IsLoyaltyPointAchieved createState() => _IsLoyaltyPointAchieved();
+}
+
+class _IsLoyaltyPointAchieved extends State<IsLoyaltyPointAchieved> {
+  late bool toggle;
+
+  @override
+  void initState() {
+    super.initState();
+    toggle = widget.initialToggle || widget.loyaltyPoints >= 120;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        setState(() {
+          toggle = !toggle;
+        });
+
+        // Check if loyaltyPoints is 120 or more
+        if (widget.loyaltyPoints >= 120) {
+          // Update the isGoldMember field in the database
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc('your-user-id') // Replace with actual user ID
+              .update({'isGoldMember': true});
+        }
+
+        widget.onToggle(toggle);
+      },
+      child: Container(
+        height: 20,
+        width: 40,
+        decoration: BoxDecoration(
+          color: toggle ? Colors.green : Colors.black12,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black45),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              curve: Curves.easeInOut,
+              right: toggle ? 0 : 20,
+              left: toggle ? 20 : 0,
+              duration: Duration(milliseconds: 300),
+              child: AnimatedContainer(
+                curve: Curves.easeInOut,
+                height: 18,
+                width: 18,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                duration: Duration(milliseconds: 300),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class IsChannelPartnrReccommended extends StatefulWidget {
+  final bool initialToggle;
+  final Function(bool) onToggle;
+
+  IsChannelPartnrReccommended(
+      {required this.initialToggle, required this.onToggle});
+
+  @override
+  _IsChannelPartnrReccommended createState() => _IsChannelPartnrReccommended();
+}
+
+class _IsChannelPartnrReccommended
+    extends State<IsChannelPartnrReccommended> {
+  late bool toggle;
+
+  @override
+  void initState() {
+    super.initState();
+    toggle = widget.initialToggle;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          toggle = !toggle;
+        });
+        widget.onToggle(toggle);
+      },
+      child: Container(
+        height: 20,
+        width: 40,
+        decoration: BoxDecoration(
+          color: toggle ? Colors.green : Colors.black12,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black45),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              curve: Curves.easeInOut,
+              right: toggle ? 0 : 20,
+              left: toggle ? 20 : 0,
+              duration: Duration(milliseconds: 300),
+              child: AnimatedContainer(
+                curve: Curves.easeInOut,
+                height: 18,
+                width: 18,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                duration: Duration(milliseconds: 300),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class IsSupportGeften extends StatefulWidget {
+  final bool initialToggle;
+  final Function(bool) onToggle;
+
+  IsSupportGeften({required this.initialToggle, required this.onToggle});
+
+  @override
+  _IsSupportGeften createState() => _IsSupportGeften();
+}
+
+class _IsSupportGeften extends State<IsSupportGeften> {
+  late bool toggle;
+
+  @override
+  void initState() {
+    super.initState();
+    toggle = widget.initialToggle;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          toggle = !toggle;
+        });
+        widget.onToggle(toggle);
+      },
+      child: Container(
+        height: 20,
+        width: 40,
+        decoration: BoxDecoration(
+          color: toggle ? Colors.green : Colors.black12,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black45),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              curve: Curves.easeInOut,
+              right: toggle ? 0 : 20,
+              left: toggle ? 20 : 0,
+              duration: Duration(milliseconds: 300),
+              child: AnimatedContainer(
+                curve: Curves.easeInOut,
+                height: 18,
+                width: 18,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                duration: Duration(milliseconds: 300),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class ToggleButton extends StatefulWidget {
   final bool initialToggle;
@@ -1048,3 +1344,4 @@ class _ToggleButtonState extends State<ToggleButton> {
     );
   }
 }
+

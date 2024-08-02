@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:html' as html;
 import 'dart:math';
 import 'package:csv/csv.dart';
+import 'package:gefmartwiringadmin/core/constants/Appcolor.dart';
 import '../../../../model/qr_batchmodel.dart';
 import '../../../../model/qr_model.dart';
 
@@ -18,12 +19,9 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
   final Set<String> _generatedCodes = {};
   final Set<String> _existingCodes = {};
   int _rowsPerPage = 5;
-  int? _sortColumnIndex;
-  bool _sortAscending = true;
   final ScrollController _scrollController = ScrollController();
   final Random _random = Random();
   bool _selectAll = false;
-  String _selectedStatus = "All";
   bool _isDownloading = false;
   int _currentBatchNumber = 1;
 
@@ -48,7 +46,78 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
     }
   }
 
-  void _generateUniqueCodes(int count) {
+  Future<void> _showGenerateDialog() async {
+    int? count;
+    String? selectedCableType;
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text('Generate QR Codes'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(hintText: 'Enter number of codes to generate'),
+                    onChanged: (value) {
+                      count = int.tryParse(value);
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  DropdownButton<String>(
+                    value: selectedCableType,
+                    hint: Text('Select Cable Type'),
+                    items: <String>['Green Cable', 'White Cable'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedCableType = newValue;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Submit'),
+                  onPressed: () {
+                    if (count != null && count! > 0 && selectedCableType != null) {
+                      if (selectedCableType == 'Green Cable') {
+                        _generateUniqueCodes(count!, rewardPoint: 30, loyaltyInt: 1);
+                      } else if (selectedCableType == 'White Cable') {
+                        _generateUniqueCodes(count!, rewardPoint: 20, loyaltyInt: 0);
+                      }
+                      Navigator.of(context).pop();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Please enter a valid number and select a cable type')),
+                      );
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _generateUniqueCodes(int count, {required int rewardPoint, required int loyaltyInt}) {
     List<GenerateQrCodeModel> generatedCodes = [];
     List<String> eliminatedDuplicates = [];
 
@@ -67,8 +136,8 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
             id: uniqueCode,
             QrNumber: uniqueCode,
             ScanStatus: "Hold",
-            RewardPoint: 0,
-            Loyaltyint: 0,
+            RewardPoint: rewardPoint,
+            Loyaltyint: loyaltyInt,
             CreatedDate: DateTime.now(),
             ExportedDate: DateTime.now(),
             ExportStatus: false,
@@ -91,42 +160,6 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
   String _generateUniqueCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return List.generate(6, (index) => chars[_random.nextInt(chars.length)]).join();
-  }
-
-  Future<void> _showGenerateDialog() async {
-    int? count;
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Generate QR Codes'),
-          content: TextField(
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(hintText: 'Enter number of codes to generate'),
-            onChanged: (value) {
-              count = int.tryParse(value);
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Submit'),
-              onPressed: () {
-                if (count != null && count! > 0) {
-                  _generateUniqueCodes(count!);
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _showDuplicatePopup(List<String> eliminatedDuplicates) async {
@@ -166,15 +199,8 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
 
   void _filterData() {
     setState(() {
-      if (_selectedStatus == "All") {
-        _filteredData.clear();
-        _filteredData.addAll(_allData);
-      } else {
-        _filteredData.clear();
-        _filteredData.addAll(
-          _allData.where((item) => item['ScanStatus'] == _selectedStatus).toList(),
-        );
-      }
+      _filteredData.clear();
+      _filteredData.addAll(_allData);
     });
   }
 
@@ -227,10 +253,7 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
 
       await _saveToFirebase(uniqueData);
 
-      List<List<String>> csvData = [
-        <String>['Qr Number'],
-        ...uniqueData.map((item) => [item['QrNumber']]),
-      ];
+      List<List> csvData = uniqueData.map((item) => [item['QrNumber']]).toList();
 
       String csv = const ListToCsvConverter().convert(csvData);
 
@@ -332,22 +355,6 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
                   onPressed: _showGenerateDialog,
                   child: Text('Generate QR Codes'),
                 ),
-                DropdownButton<String>(
-                  value: _selectedStatus,
-                  items: ["All", "Hold", "Ready to Scan"]
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedStatus = newValue!;
-                      _filterData();
-                    });
-                  },
-                ),
                 ElevatedButton(
                   onPressed: _downloadCsv,
                   child: Text('Download CSV'),
@@ -367,28 +374,20 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
                       ),
                     ),
                     DataColumn(
-                      label: Text('Qr Number'),
-                      onSort: (int columnIndex, bool ascending) {
-                        _sort<String>((Map<String, dynamic> d) => d['QrNumber'], columnIndex, ascending);
-                      },
+                      label: Text('Qr Number '),
                     ),
                     DataColumn(
-                      label: Text('Scan Status'),
-                      onSort: (int columnIndex, bool ascending) {
-                        _sort<String>((Map<String, dynamic> d) => d['ScanStatus'], columnIndex, ascending);
-                      },
+                      label: Text('Scan Status  '),
                     ),
                     DataColumn(
-                      label: Text('Export Status'),
-                      onSort: (int columnIndex, bool ascending) {
-                        _sort<bool>((Map<String, dynamic> d) => d['ExportStatus'], columnIndex, ascending);
-                      },
+                      label: Text('Export Status  '),
                     ),
-                    DataColumn(label: Text('Exported Date')),
-                    DataColumn(label: Text('Blank')),
-                    DataColumn(label: Text('Blank')),
-                    DataColumn(label: Text('Blank')),
-                    DataColumn(label: Text('Blank')),
+                    DataColumn(label: Text('Exported Date  ')),
+                    DataColumn(label: Text('Blank      ')),
+                    DataColumn(label: Text('Blank      ')),
+                    DataColumn(label: Text('Blank      ')),
+                    DataColumn(label: Text('Blank      ')),
+                    DataColumn(label: Text('Blank      ')),
                   ],
                   source: _DataTableSource(_filteredData),
                   onRowsPerPageChanged: (int? value) {
@@ -398,8 +397,6 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
                   },
                   availableRowsPerPage: [5, 10, 15, 20],
                   rowsPerPage: _rowsPerPage,
-                  sortColumnIndex: _sortColumnIndex,
-                  sortAscending: _sortAscending,
                   dataRowHeight: 100.0,
                   onPageChanged: (pageIndex) {
                     _scrollController.jumpTo(0);
@@ -415,23 +412,6 @@ class QrGenerateDataTableState extends State<QrGenerateDataTable> {
           ),
       ],
     );
-  }
-
-  void _sort<T>(Comparable<T> Function(Map<String, dynamic> d) getField, int columnIndex, bool ascending) {
-    _filteredData.sort((a, b) {
-      if (!ascending) {
-        final Map<String, dynamic> c = a;
-        a = b;
-        b = c;
-      }
-      final Comparable<T> aValue = getField(a);
-      final Comparable<T> bValue = getField(b);
-      return Comparable.compare(aValue, bValue);
-    });
-    setState(() {
-      _sortColumnIndex = columnIndex;
-      _sortAscending = ascending;
-    });
   }
 }
 
@@ -469,6 +449,7 @@ class _DataTableSource extends DataTableSource {
         DataCell(Text(item['ScanStatus'] ?? '')),
         DataCell(Text(item['ExportStatus'] == true ? 'Exported' : 'Not Exported')),
         DataCell(Text(item['ExportedDate']?.toString() ?? '')),
+        DataCell(Text('')),
         DataCell(Text('')),
         DataCell(Text('')),
         DataCell(Text('')),

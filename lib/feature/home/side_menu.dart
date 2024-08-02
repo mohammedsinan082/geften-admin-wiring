@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/Appcolor.dart';
@@ -94,14 +95,16 @@ class _SideMenuState extends State<SideMenu> {
                           selectedTab = 0;
                         });
                       },
-                      child: Row(
+                      child:
+                      selectedTab == 0?
+                      Row(
                         children: [
                           const SizedBox(
                             width: 10,
                           ),
                           Icon(
                             Icons.dashboard,
-                            color: selectedTab == 0 ? Colors.white : Colors.grey,
+                            color: Colors.white,
                             size: 18,
                           ),
                           const SizedBox(
@@ -110,11 +113,38 @@ class _SideMenuState extends State<SideMenu> {
                           Text(
                             'Dashboard',
                             style: GoogleFonts.poppins(
-                              color: selectedTab == 0 ? Colors.white : Colors.grey,
+                              color:Colors.white,
                             ),
                           )
                         ],
-                      ),
+                      )       .animate(
+                        onPlay: (controller) => controller.repeat(),
+                      )
+                          .then(delay: 100.ms)
+                          .shimmer(
+                        duration: 2400.ms,
+                        color: AppColors.green,
+                      ):Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(
+                            Icons.dashboard,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Dashboard',
+                            style: GoogleFonts.poppins(
+                              color:Colors.grey,
+                            ),
+                          )
+                        ],
+                      )
                     ),
                   ),
                   SizedBox(height: h * 0.01),
@@ -136,15 +166,17 @@ class _SideMenuState extends State<SideMenu> {
                           selectedTab = 1;
                         });
                       },
-                      child: Row(
+                      child:
+                      selectedTab == 1?
+                      Row(
                         children: [
                           const SizedBox(
                             width: 10,
                           ),
                           Icon(
                             Icons.person,
+                            color: Colors.white,
                             size: 18,
-                            color: selectedTab == 1 ? Colors.white : Colors.grey,
                           ),
                           const SizedBox(
                             width: 7,
@@ -152,11 +184,38 @@ class _SideMenuState extends State<SideMenu> {
                           Text(
                             'Users',
                             style: GoogleFonts.poppins(
-                              color: selectedTab == 1 ? Colors.white : Colors.grey,
+                              color:Colors.white,
                             ),
                           )
                         ],
-                      ),
+                      )       .animate(
+                        onPlay: (controller) => controller.repeat(),
+                      )
+                          .then(delay: 100.ms)
+                          .shimmer(
+                        duration: 2400.ms,
+                        color: AppColors.green,
+                      ):Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Users',
+                            style: GoogleFonts.poppins(
+                              color:Colors.grey,
+                            ),
+                          )
+                        ],
+                      )
                     ),
                   ),
                   SizedBox(height: h * 0.01),
@@ -178,28 +237,56 @@ class _SideMenuState extends State<SideMenu> {
                           selectedTab = 2;
                         });
                       },
-                      child: Row(
+                      child:
+
+                      selectedTab == 2?
+                      Row(
                         children: [
                           const SizedBox(
                             width: 10,
                           ),
-                          Image.asset("assets/Silver.png"),
-                          // Icon(
-                          //   Icons.person,
-                          //   size: 18,
-                          //   color: selectedTab == 2 ? Colors.white : Colors.grey,
-                          // ),
+                          Icon(Icons.circle,color:Colors.grey,).animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
+                          SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Silver',
+                            style: GoogleFonts.poppins(
+                              color:Colors.white,
+                            ),
+                          )
+                        ],
+                      )       .animate(
+                        onPlay: (controller) => controller.repeat(),
+                      )
+                          .then(delay: 100.ms)
+                          .shimmer(
+                        duration: 2400.ms,
+                        color: AppColors.green,
+                      ):Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(Icons.circle,color:Colors.grey,),
                           const SizedBox(
                             width: 7,
                           ),
                           Text(
                             'Silver',
                             style: GoogleFonts.poppins(
-                              color: selectedTab == 2 ? Colors.white : Colors.grey,
+                              color:Colors.grey,
                             ),
                           )
                         ],
-                      ),
+                      )
                     ),
                   ),
                   SizedBox(height: h * 0.01),
@@ -221,23 +308,56 @@ class _SideMenuState extends State<SideMenu> {
                           selectedTab = 3;
                         });
                       },
-                      child: Row(
+                      child:
+
+                      selectedTab == 3?
+                      Row(
                         children: [
                           const SizedBox(
                             width: 10,
                           ),
-                          Image.asset("assets/Gold.png"),
+                          Icon(Icons.circle,color:Colors.yellow.shade700,).animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
                           const SizedBox(
                             width: 7,
                           ),
                           Text(
                             'Gold',
                             style: GoogleFonts.poppins(
-                              color: selectedTab == 3 ? Colors.white : Colors.grey,
+                              color:Colors.white,
                             ),
+                          )       .animate(
+                            onPlay: (controller) => controller.repeat(),
                           )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
                         ],
-                      ),
+                      ):Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(Icons.circle,color:Colors.yellow.shade700,),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Gold',
+                            style: GoogleFonts.poppins(
+                              color:Colors.grey,
+                            ),
+                          ),
+                        ],
+                      )
                     ),
                   ),
                   SizedBox(height: h * 0.01),
@@ -259,19 +379,51 @@ class _SideMenuState extends State<SideMenu> {
                           selectedTab = 4;
                         });
                       },
-                      child: Row(
+                      child:selectedTab == 4 ?
+                      Row(
                         children: [
                           const SizedBox(
                             width: 10,
                           ),
-                          Icon(Icons.auto_delete_outlined,size: 20,color: AppColors.red,),
+                          Icon(Icons.cached_rounded,color:Colors.white,)
+                              .animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
                           const SizedBox(
                             width: 7,
                           ),
                           Text(
                             'Deleted Users',
                             style: GoogleFonts.poppins(
-                              color: selectedTab == 4 ? Colors.white : Colors.grey,
+                              color:Colors.white,
+                            )
+                          ) .animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
+                        ],
+                      ):Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(Icons.cached_rounded,color:Colors.grey,),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Deleted Users',
+                            style: GoogleFonts.poppins(
+                              color:Colors.grey,
                             ),
                           )
                         ],
@@ -297,19 +449,51 @@ class _SideMenuState extends State<SideMenu> {
                           selectedTab = 5;
                         });
                       },
-                      child: Row(
+                      child:
+                      selectedTab == 5?
+                      Row(
                         children: [
                           const SizedBox(
                             width: 10,
                           ),
-                          Image.asset("assets/imageqr.png"),
+                          Icon(Icons.qr_code,color:Colors.white,).animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
                           const SizedBox(
                             width: 7,
                           ),
                           Text(
                             'Qr Code Generate',
                             style: GoogleFonts.poppins(
-                              color: selectedTab == 5 ? Colors.white : Colors.grey,
+                              color:Colors.white,
+                            ),
+                          ) .animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
+                        ],
+                      ):Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(Icons.qr_code,color:Colors.grey,),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Qr Code Generate',
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey,
                             ),
                           )
                         ],
@@ -335,19 +519,125 @@ class _SideMenuState extends State<SideMenu> {
                           selectedTab = 6;
                         });
                       },
-                      child: Row(
+                      child:
+                          selectedTab == 6?
+                      Row(
                         children: [
                           const SizedBox(
                             width: 10,
                           ),
-                          Image.asset("assets/imageqr.png"),
+                        Icon(Icons.qr_code_scanner,color:Colors.white,)
+                              .animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
                           const SizedBox(
                             width: 7,
                           ),
                           Text(
                             'Qr View',
                             style: GoogleFonts.poppins(
-                              color: selectedTab == 6 ? Colors.white : Colors.grey,
+                              color:Colors.white,
+                            ),
+                          ) .animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
+                        ],
+                      ):
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              Icon(Icons.qr_code,color:Colors.grey,),
+                              const SizedBox(
+                                width: 7,
+                              ),
+                              Text(
+                                'Qr View',
+                                style: GoogleFonts.poppins(
+                                  color:Colors.grey,
+                                ),
+                              )
+                            ],
+                          ),
+                    ),
+                  ),
+                  SizedBox(height: h * 0.01),
+                  Container(
+                    height: 30,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: selectedTab == 7 ? Colors.green : Colors.transparent,
+                      border: selectedTab == 7
+                          ? const Border(
+                        left: BorderSide(color: Colors.white, width: 3),
+                      )
+                          : null,
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          widget.tabController.animateTo(7);
+                          selectedTab = 7;
+                        });
+                      },
+                      child:
+                      selectedTab == 7?
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(Icons.abc_outlined,color:Colors.white,)
+                              .animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Advertisement',
+                            style: GoogleFonts.poppins(
+                              color:Colors.white,
+                            ),
+                          ) .animate(
+                            onPlay: (controller) => controller.repeat(),
+                          )
+                              .then(delay: 100.ms)
+                              .shimmer(
+                            duration: 2400.ms,
+                            color: AppColors.green,
+                          ),
+                        ],
+                      ):
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Icon(Icons.abc_outlined,color:Colors.grey,),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            'Advertisement',
+                            style: GoogleFonts.poppins(
+                              color:Colors.grey,
                             ),
                           )
                         ],

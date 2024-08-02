@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gefmartwiringadmin/feature/home/advertisement/screens/adv_page.dart';
 import 'package:gefmartwiringadmin/feature/home/deleted_users/deleted_users.dart';
 import 'package:gefmartwiringadmin/feature/home/gold_members/gold_members.dart';
 import 'package:gefmartwiringadmin/feature/home/qr_generating/screen/qr_GenerateData.dart';
@@ -24,7 +25,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length:7, initialIndex: 0, vsync: this);
+    tabController = TabController(length:8, initialIndex: 0, vsync: this);
   }
 
   @override
@@ -49,6 +50,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       DeletedUsersPage(),
                       QrGenerateDataTable(),
                       BatchListPage(),
+                      AdvertisementPage()
 
                       // QuestionPage(questionModel: widget.questionModel),
                       // ViewDataCategory(),

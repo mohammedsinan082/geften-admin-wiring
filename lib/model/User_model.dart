@@ -12,10 +12,16 @@ class UserModel {
   final String pinCode;
   bool isdeleted;
   final bool isGoldMember;
+  bool? isLoyaltyPointAchieved;
+  bool? isChannelPartnrReccommended;
+  bool? isSupportGeften;
   String? insuranceNumber;
   int? loyaltyPoints;
   int? rewardPOints;
-  int? redeemedPoints;
+  List? scannedRewardPoints;
+  List? scannedLoyaltyPoints;
+  List? redeemedRewardPoints;
+  List? redeemedLoyaltyPoints;
   String? pdfUrl;
   UserModel({
     required this.name,
@@ -31,10 +37,16 @@ class UserModel {
     required this.state,
     required this.isdeleted,
     required this.isGoldMember,
+    this.isLoyaltyPointAchieved,
+    this.isSupportGeften,
+    this.isChannelPartnrReccommended,
     this.insuranceNumber,
     this.loyaltyPoints,
     this.rewardPOints,
-    this.redeemedPoints,
+    this.scannedRewardPoints,
+    this.scannedLoyaltyPoints,
+    this.redeemedRewardPoints,
+    this.redeemedLoyaltyPoints,
     this.pdfUrl,
   });
 
@@ -52,10 +64,16 @@ class UserModel {
     String? state,
     bool? isdeleted,
     bool? isGoldMember,
+    bool? isLoyaltyPointAchieved,
+    bool? isChannelPartnrReccommended,
+    bool? isSupportGeften,
     String? insuranceNumber,
     int? loyaltyPoints,
     int? rewardPOints,
-    int? redeemedPoints,
+    List? scannedRewardPoints,
+    List? scannedLoyaltyPoints,
+    List? redeemedRewardPoints,
+    List? redeemedLoyaltyPoints,
     String? pdfUrl,
   }) {
     return UserModel(
@@ -72,10 +90,17 @@ class UserModel {
       state: state ?? this.state,
       isdeleted: isdeleted ?? this.isdeleted,
       isGoldMember: isGoldMember ?? this.isGoldMember,
+      isLoyaltyPointAchieved: isLoyaltyPointAchieved ?? this.isLoyaltyPointAchieved,
+      isSupportGeften: isSupportGeften ?? this.isSupportGeften,
+      isChannelPartnrReccommended: isChannelPartnrReccommended ?? this.isChannelPartnrReccommended,
       insuranceNumber: insuranceNumber ?? this.insuranceNumber,
       loyaltyPoints: loyaltyPoints ?? this.loyaltyPoints,
       rewardPOints: rewardPOints ?? this.rewardPOints,
-      redeemedPoints: redeemedPoints ?? this.redeemedPoints,
+      scannedRewardPoints: scannedRewardPoints ?? this.scannedRewardPoints,
+      scannedLoyaltyPoints: scannedLoyaltyPoints ?? this.scannedLoyaltyPoints,
+      redeemedRewardPoints: redeemedRewardPoints ?? this.redeemedRewardPoints,
+      redeemedLoyaltyPoints:
+      redeemedLoyaltyPoints ?? this.redeemedLoyaltyPoints,
       pdfUrl: pdfUrl ?? this.pdfUrl,
     );
   }
@@ -84,7 +109,7 @@ class UserModel {
     return <String, dynamic>{
       'name': name,
       'mobileNumber': mobileNumber,
-      'aadharNumber': aadharNumber,
+      'aadharNumber': aadharNumber ?? '',
       'imageUrl': imageUrl ?? '',
       'bankAccountDetails': bankAccountDetails.toJson(),
       'isApproved': isApproved,
@@ -95,11 +120,17 @@ class UserModel {
       'state': state,
       'isdeleted': isdeleted,
       'isGoldMember': isGoldMember,
+      'isLoyaltyPointAchieved': isLoyaltyPointAchieved ?? false,
+      'isSupportGeften': isSupportGeften ?? false,
+      'isChannelPartnrReccommended': isChannelPartnrReccommended ?? false,
       'insuranceNumber': insuranceNumber ?? '',
       'loyaltyPoints': loyaltyPoints ?? 0,
       'rewardPoints': rewardPOints ?? 0,
-      'redeemPoints': redeemedPoints ?? 0,
-      'pdfUrl': pdfUrl,
+      'scannedRewardPoints': scannedRewardPoints ?? [],
+      'scannedLoyaltyPoints': scannedLoyaltyPoints ?? [],
+      'redeemedRewardPoints': redeemedRewardPoints ?? [],
+      'redeemedLoyaltyPoints': redeemedLoyaltyPoints ?? [],
+      'pdfUrl': pdfUrl ?? '',
     };
   }
 
@@ -119,10 +150,16 @@ class UserModel {
       state: json['state'],
       isdeleted: json['isdeleted'],
       isGoldMember: json['isGoldMember'],
+      isLoyaltyPointAchieved: json['isLoyaltyPointAchieved'],
+      isSupportGeften: json['isSupportGeften'],
+      isChannelPartnrReccommended: json['isChannelPartnrReccommended'],
       insuranceNumber: json['insuranceNumber'] ?? '',
       loyaltyPoints: json['loyaltyPoints'] ?? 0,
       rewardPOints: json['rewardPoints'] ?? 0,
-      redeemedPoints: json['redeemPoints'] ?? 0,
+      scannedRewardPoints: json['scannedRewardPoints'],
+      scannedLoyaltyPoints: json['scannedLoyaltyPoints'],
+      redeemedRewardPoints: json['redeemedRewardPoints'],
+      redeemedLoyaltyPoints: json['redeemedLoyaltyPoints'],
       pdfUrl: json['pdfUrl'] ?? '',
     );
   }
@@ -163,6 +200,78 @@ class BankAccountDetails {
       bankAccountNumber: json['bankAccountNumber'] ?? '',
       bankName: json['bankName'] ?? '',
       ifscCode: json['ifscCode'] ?? '',
+    );
+  }
+}
+
+class ScannedPoints {
+  String? qrNumber;
+  int? points;
+  DateTime? scannedDate;
+  ScannedPoints({
+    this.qrNumber,
+    this.points,
+    this.scannedDate,
+  });
+
+  ScannedPoints copyWith({
+    String? qrNumber,
+    int? points,
+    DateTime? scannedDate,
+  }) {
+    return ScannedPoints(
+      qrNumber: qrNumber ?? this.qrNumber,
+      points: points ?? this.points,
+      scannedDate: scannedDate ?? this.scannedDate,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'qrNumber': qrNumber ?? '',
+      'points': points ?? 0,
+      'scannedDate': scannedDate ?? DateTime.now(),
+    };
+  }
+
+  factory ScannedPoints.fromMap(Map<String, dynamic> map) {
+    return ScannedPoints(
+      qrNumber: map['qrNumber'],
+      points: map['points'],
+      scannedDate: map['scannedDate'].toDate(),
+    );
+  }
+}
+
+class RedeemedPoints {
+  int? redeemedPoints;
+  DateTime? redeemedDate;
+  RedeemedPoints({
+    this.redeemedPoints,
+    this.redeemedDate,
+  });
+
+  RedeemedPoints copyWith({
+    int? redeemedPoints,
+    DateTime? redeemedDate,
+  }) {
+    return RedeemedPoints(
+      redeemedPoints: redeemedPoints ?? this.redeemedPoints,
+      redeemedDate: redeemedDate ?? this.redeemedDate,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'redeemedPoints': redeemedPoints ?? 0,
+      'redeemedDate': redeemedDate ?? DateTime.now(),
+    };
+  }
+
+  factory RedeemedPoints.fromMap(Map<String, dynamic> map) {
+    return RedeemedPoints(
+      redeemedPoints: map['redeemedPoints'],
+      redeemedDate: map['redeemedDate'].toDate(),
     );
   }
 }

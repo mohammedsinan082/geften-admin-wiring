@@ -11,18 +11,22 @@ class _BatchListPageState extends State<BatchListPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<DocumentSnapshot> _batches = [];
   Map<String, Map<String, double>> _batchStatusPercentages = {};
+  Map<String, String> _batchCableTypes = {};
   DocumentSnapshot? _lastDocument;
-  DocumentSnapshot? _firstDocument;
   bool _isLoading = false;
   bool _hasMore = true;
-  bool _canGoBack = false;
   int _batchSize = 10;
-  int _currentPage = 0;
+  ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _fetchBatches(isNext: true);
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && _hasMore) {
+        _fetchBatches(isNext: true);
+      }
+    });
   }
 
   Future<void> _fetchBatches({required bool isNext}) async {
@@ -34,9 +38,7 @@ class _BatchListPageState extends State<BatchListPage> {
 
     Query query = _firestore.collection('qr_batches').limit(_batchSize);
 
-    if (!isNext && _firstDocument != null) {
-      query = query.endBeforeDocument(_firstDocument!);
-    } else if (isNext && _lastDocument != null) {
+    if (_lastDocument != null) {
       query = query.startAfterDocument(_lastDocument!);
     }
 
@@ -44,34 +46,19 @@ class _BatchListPageState extends State<BatchListPage> {
 
     if (querySnapshot.docs.isEmpty) {
       setState(() {
-        if (isNext) {
-          _hasMore = false;
-        } else {
-          _canGoBack = false;
-        }
+        _hasMore = false;
         _isLoading = false;
       });
       return;
     }
 
     setState(() {
-      if (isNext) {
-        _firstDocument = querySnapshot.docs.first;
-        _batches = querySnapshot.docs;
-        _lastDocument = querySnapshot.docs.last;
-        _canGoBack = true;
-        _currentPage += 1;
-      } else {
-        _firstDocument = querySnapshot.docs.first;
-        _batches = querySnapshot.docs.reversed.toList();
-        _lastDocument = querySnapshot.docs.last;
-        _hasMore = true;
-        _currentPage -= 1;
-      }
+      _batches.addAll(querySnapshot.docs);
+      _lastDocument = querySnapshot.docs.last;
       _isLoading = false;
     });
 
-    _fetchAllBatchStatusPercentages(_batches);
+    _fetchAllBatchStatusPercentages(querySnapshot.docs);
   }
 
   void _fetchAllBatchStatusPercentages(List<DocumentSnapshot> batchDocs) async {
@@ -87,6 +74,7 @@ class _BatchListPageState extends State<BatchListPage> {
     int readyToScanCount = 0;
     int scannedCount = 0;
 
+    String cableType = 'Unknown';
     for (var doc in querySnapshot.docs) {
       String status = doc['ScanStatus'];
       if (status == 'Hold') {
@@ -95,6 +83,16 @@ class _BatchListPageState extends State<BatchListPage> {
         readyToScanCount++;
       } else if (status == 'Scanned') {
         scannedCount++;
+      }
+
+      // Fetch RewardPoint and Loyaltyint to determine cable type
+      int rewardPoint = doc['RewardPoint'];
+      int loyaltyInt = doc['Loyaltyint'];
+
+      if (rewardPoint == 20 && loyaltyInt == 0) {
+        cableType = 'White Cable';
+      } else if (rewardPoint == 30 && loyaltyInt == 1) {
+        cableType = 'Green Cable';
       }
     }
 
@@ -108,6 +106,7 @@ class _BatchListPageState extends State<BatchListPage> {
         'Ready to Scan': readyToScanPercentage,
         'Scanned': scannedPercentage,
       };
+      _batchCableTypes[batchId] = cableType;
     });
   }
 
@@ -116,6 +115,12 @@ class _BatchListPageState extends State<BatchListPage> {
       context,
       MaterialPageRoute(builder: (context) => QrViewDataTable(batchId: batch.id)),
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -128,18 +133,30 @@ class _BatchListPageState extends State<BatchListPage> {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: _batches.length,
+              controller: _scrollController,
+              itemCount: _batches.length + (_hasMore ? 1 : 0), // Add one for the loading indicator
               itemBuilder: (context, index) {
+                if (index == _batches.length) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
                 var batch = _batches[index];
                 var percentages = _batchStatusPercentages[batch.id] ?? {'Hold': 0.0, 'Ready to Scan': 0.0, 'Scanned': 0.0};
+                var cableType = _batchCableTypes[batch.id] ?? 'Unknown';
                 return Column(
                   children: [
                     ListTile(
                       title: Text('${batch.id}'),
-                      subtitle: Text(
-                        'Hold: ${percentages['Hold']?.toStringAsFixed(1)}%,        '
-                            'Ready to Scan: ${percentages['Ready to Scan']?.toStringAsFixed(1)}%,         '
-                            'Scanned: ${percentages['Scanned']?.toStringAsFixed(1)}%',
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hold: ${percentages['Hold']?.toStringAsFixed(1)}%,        '
+                                'Ready to Scan: ${percentages['Ready to Scan']?.toStringAsFixed(1)}%,         '
+                                'Scanned: ${percentages['Scanned']?.toStringAsFixed(1)}%',
+                          ),
+                          Text('Cable Type: $cableType', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
                       ),
                       onTap: () => _viewBatchDetails(batch),
                     ),
@@ -149,35 +166,11 @@ class _BatchListPageState extends State<BatchListPage> {
               },
             ),
           ),
-          if (_isLoading)
+          if (_isLoading && _batches.isEmpty)
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: CircularProgressIndicator(),
             ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (_canGoBack)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: () => _fetchBatches(isNext: false),
-                    child: Text('Prev'),
-                  ),
-                ),
-              Spacer(),
-              Text('Page $_currentPage'),
-              Spacer(),
-              if (_hasMore)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: () => _fetchBatches(isNext: true),
-                    child: Text('Next'),
-                  ),
-                ),
-            ],
-          ),
         ],
       ),
     );

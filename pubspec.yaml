@@ -52,6 +52,8 @@ dependencies:
   csv: ^5.0.0
   share: ^2.0.4
   dartz: ^0.10.0-nullsafety.3
+  flutter_animate: ^4.5.0
+
 
 
 dev_dependencies:
